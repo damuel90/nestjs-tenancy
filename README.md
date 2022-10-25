@@ -1,4 +1,4 @@
-<h1 align="center">nestjs-tenancy</h1>
+<h1 align="center">nestjs-multitenancy</h1>
 
 <p align="center">
   A simple easy to use multitenancy module for NestJs and Mongoose
@@ -12,36 +12,29 @@
 
 ## Description
 
-[Mongoose](http://mongoosejs.com/) multitenancy module for [Nest](https://github.com/nestjs/nest).
+[Mongoose](http://mongoosejs.com/) multitenancy module for [Nest](https://github.com/nestjs/nest), forked from [needle-innovision/nestjs-tenancy](https://github.com/needle-innovision/nestjs-tenancy), modified to accept a tenant id from a function, i.e. expose a function to obtain the tenant id from any part of the request as well as being able to exclude certain paths from the creation of connections
 
 ## Installation
 
 ```bash
-npm i --save @needle-innovision/nestjs-tenancy
+npm i --save @damuel90/nestjs-muntitenancy
 ```
-
-***Note*** For nestjs version
-
-| Nest versions | Command                                                 |
-|---------------|---------------------------------------------------------|
-| v8.x          | `npm i --save @needle-innovision/nestjs-tenancy`        |
-| v6.x or v7.x  | `npm i --save @needle-innovision/nestjs-tenancy@1.0.21` |
 
 ## Basic usage
 
 **app.module.ts**
 
 ```typescript
-import { Module } from "@nestjs/common";
-import { TenancyModule } from "@needle-innovision/nestjs-tenancy";
-import { CatsModule } from "./cat.module.ts";
+import { Module } from '@nestjs/common';
+import { TenancyModule } from '@needle-innovision/nestjs-tenancy';
+import { CatsModule } from './cat.module.ts';
 
 @Module({
   imports: [
     TenancyModule.forRoot({
-        tenantIdentifier: 'X-TENANT-ID',
-        options: () => {},
-        uri: (tenantId: string) => `mongodb://localhost/test-tenant-${tenantId}`,
+      tenantIdentifier: 'X-TENANT-ID',
+      options: () => {},
+      uri: (tenantId: string) => `mongodb://localhost/test-tenant-${tenantId}`,
     }),
     CatsModule,
   ],
@@ -59,14 +52,14 @@ import { Document } from 'mongoose';
 
 @Schema()
 export class Cat extends Document {
-    @Prop()
-    name: string;
+  @Prop()
+  name: string;
 
-    @Prop()
-    age: number;
+  @Prop()
+  age: number;
 
-    @Prop()
-    breed: string;
+  @Prop()
+  breed: string;
 }
 
 export const CatSchema = SchemaFactory.createForClass(Cat);
@@ -84,13 +77,11 @@ import { CatsService } from './cats.service';
 import { Cat, CatSchema } from './schemas/cat.schema';
 
 @Module({
-    imports: [
-        TenancyModule.forFeature([{ name: Cat.name, schema: CatSchema }])
-    ],
-    controllers: [CatsController],
-    providers: [CatsService],
+  imports: [TenancyModule.forFeature([{ name: Cat.name, schema: CatSchema }])],
+  controllers: [CatsController],
+  providers: [CatsService],
 })
-export class CatsModule { }
+export class CatsModule {}
 ```
 
 Get the cat model in a service
@@ -106,18 +97,18 @@ import { Cat } from './schemas/cat.schema';
 
 @Injectable()
 export class CatsService {
-    constructor(
-        @InjectTenancyModel(Cat.name) private readonly catModel: Model<Cat>
-    ) { }
+  constructor(
+    @InjectTenancyModel(Cat.name) private readonly catModel: Model<Cat>,
+  ) {}
 
-    async create(createCatDto: CreateCatDto): Promise<Cat> {
-        const createdCat = new this.catModel(createCatDto);
-        return createdCat.save();
-    }
+  async create(createCatDto: CreateCatDto): Promise<Cat> {
+    const createdCat = new this.catModel(createCatDto);
+    return createdCat.save();
+  }
 
-    async findAll(): Promise<Cat[]> {
-        return this.catModel.find().exec();
-    }
+  async findAll(): Promise<Cat[]> {
+    return this.catModel.find().exec();
+  }
 }
 ```
 
@@ -126,7 +117,6 @@ Finally, use the service in a controller!
 **cats.controller.ts**
 
 ```typescript
-
 import { Body, Controller, Get, Post } from '@nestjs/common';
 import { CatsService } from './cats.service';
 import { CreateCatDto } from './dto/create-cat.dto';
@@ -134,17 +124,17 @@ import { Cat } from './schemas/cat.schema';
 
 @Controller('cats')
 export class CatsController {
-    constructor(private readonly catsService: CatsService) { }
+  constructor(private readonly catsService: CatsService) {}
 
-    @Post()
-    async create(@Body() createCatDto: CreateCatDto) {
-        return this.catsService.create(createCatDto);
-    }
+  @Post()
+  async create(@Body() createCatDto: CreateCatDto) {
+    return this.catsService.create(createCatDto);
+  }
 
-    @Get()
-    async findAll(): Promise<Cat[]> {
-        return this.catsService.findAll();
-    }
+  @Get()
+  async findAll(): Promise<Cat[]> {
+    return this.catsService.findAll();
+  }
 }
 ```
 
@@ -162,46 +152,48 @@ Here we assume that `X-TENANT-ID` is passed in the request header so that its av
 
 ```typescript
 import { TenancyValidator } from '@app/tenancy';
-import { Injectable, NotFoundException } from "@nestjs/common";
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { ITenantModel } from '../../core/models/tenant.model';
 
 @Injectable()
 export class CustomTenantValidator implements TenancyValidator {
-    private _tenantId: string;
+  private _tenantId: string;
 
-    // This`Tenant` model definition schema is mapped to the common database and
-    // not into the tenant database.
-    constructor(@InjectModel('Tenant') private tenantModel: Model<ITenantModel>) { }
+  // This`Tenant` model definition schema is mapped to the common database and
+  // not into the tenant database.
+  constructor(
+    @InjectModel('Tenant') private tenantModel: Model<ITenantModel>,
+  ) {}
 
-    /**
-     * Method to set the tenant id
-     *
-     * @param {string} tenantId
-     * @returns
-     * @memberof CustomTenantValidator
-     */
-    setTenantId(tenantId: string): TenancyValidator {
-        this._tenantId = tenantId;
-        return this; // Make sure to return the instance of the class back here.
+  /**
+   * Method to set the tenant id
+   *
+   * @param {string} tenantId
+   * @returns
+   * @memberof CustomTenantValidator
+   */
+  setTenantId(tenantId: string): TenancyValidator {
+    this._tenantId = tenantId;
+    return this; // Make sure to return the instance of the class back here.
+  }
+
+  /**
+   * Your Custom Validation to verify if tenant exist in the common database
+   *
+   * Note: This method will be invoked by the library internally when
+   * tenant id is present in the context.
+   *
+   * @returns {Promise<void>}
+   * @memberof CustomTenantValidator
+   */
+  async validate(): Promise<void> {
+    const exist = await this.tenantModel.exists({ name: this._tenantId });
+    if (!exist) {
+      throw new NotFoundException(`Tenant not found`);
     }
-
-    /**
-     * Your Custom Validation to verify if tenant exist in the common database
-     *
-     * Note: This method will be invoked by the library internally when
-     * tenant id is present in the context.
-     *
-     * @returns {Promise<void>}
-     * @memberof CustomTenantValidator
-     */
-    async validate(): Promise<void> {
-        const exist = await this.tenantModel.exists({ name: this._tenantId });
-        if (!exist) {
-            throw new NotFoundException(`Tenant not found`);
-        }
-    }
+  }
 }
 ```
 
@@ -220,7 +212,7 @@ import { CustomTenantValidator } from './validators/custom-tenant.validator';
 @Module({
   imports: [
     // Here the connection represents the common database
-    MongooseModule.forFeature([{ name: 'Tenant', schema: TenantSchema }])
+    MongooseModule.forFeature([{ name: 'Tenant', schema: TenantSchema }]),
   ],
   controllers: [TenantController],
   providers: [
@@ -228,10 +220,7 @@ import { CustomTenantValidator } from './validators/custom-tenant.validator';
     // Your custom validator
     CustomTenantValidator,
   ],
-  exports: [
-    TenantService,
-    CustomTenantValidator,
-  ]
+  exports: [TenantService, CustomTenantValidator],
 })
 export class TenantModule {}
 ```
@@ -253,9 +242,9 @@ Finally you will also need to modify the module configuration.
 **app.module.ts**
 
 ```typescript
-import { Module } from "@nestjs/common";
-import { TenancyModule } from "@needle-innovision/nestjs-tenancy";
-import { CatsModule } from "./cat.module.ts";
+import { Module } from '@nestjs/common';
+import { TenancyModule } from '@needle-innovision/nestjs-tenancy';
+import { CatsModule } from './cat.module.ts';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import configuration from './config';
 import { TenantModule } from './tenant/tenant.module';
@@ -281,10 +270,11 @@ import { CustomTenantValidator } from './tenant/validators/custom-tenant.validat
           // Base tenant configurations
           tenantIdentifier: 'X-TENANT-ID',
           options: () => {},
-          uri: (tenantId: string) => `mongodb://localhost/test-tenant-${tenantId}`,
+          uri: (tenantId: string) =>
+            `mongodb://localhost/test-tenant-${tenantId}`,
           // Custom validator to check if the tenant exist in common database
           validator: (tenantId: string) => tVal.setTenantId(tenantId),
-        }
+        };
       },
       inject: [ConfigService, CustomTenantValidator],
     }),
@@ -302,17 +292,17 @@ For enabling this you need to modify your configuration like below.
 **app.module.ts**
 
 ```typescript
-import { Module } from "@nestjs/common";
-import { TenancyModule } from "@needle-innovision/nestjs-tenancy";
-import { CatsModule } from "./cat.module.ts";
+import { Module } from '@nestjs/common';
+import { TenancyModule } from '@needle-innovision/nestjs-tenancy';
+import { CatsModule } from './cat.module.ts';
 
 @Module({
   imports: [
     TenancyModule.forRoot({
-        // This will allow the library to extract the subdomain as tenant id
-        isTenantFromSubdomain: true,
-        options: () => {},
-        uri: (tenantId: string) => `mongodb://localhost/test-tenant-${tenantId}`,
+      // This will allow the library to extract the subdomain as tenant id
+      isTenantFromSubdomain: true,
+      options: () => {},
+      uri: (tenantId: string) => `mongodb://localhost/test-tenant-${tenantId}`,
     }),
     CatsModule,
   ],
@@ -343,8 +333,8 @@ $ npm run test:e2e
 
 ## Stay in touch
 
-- Author - [Sandeep K](https://github.com/sandeepsuvit)
+- Author - [Damuel Querales](https://github.com/damuel90)
 
 ## License
 
-  Nest is [MIT licensed](LICENSE).
+Nest is [MIT licensed](LICENSE).
