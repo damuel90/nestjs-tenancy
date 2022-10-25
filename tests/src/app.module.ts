@@ -1,19 +1,23 @@
 import { Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
 import { TenancyModule } from '../../lib';
+import { BirdsModule } from './birds/birds.module';
 import { CatsModule } from './cats/cats.module';
 import { DogsModule } from './dogs/dogs.module';
 
 @Module({
-    imports: [
-        MongooseModule.forRoot('mongodb://localhost:27017/test'),
-        TenancyModule.forRoot({
-            tenantIdentifier: 'X-TENANT-ID',
-            options: () => { },
-            uri: (tenantId: string) => `mongodb://localhost/test-tenant-${tenantId}`,
-        }),
-        CatsModule,
-        DogsModule,
-    ],
+  imports: [
+    MongooseModule.forRoot('mongodb://127.0.0.1:27017/test'),
+    TenancyModule.forRoot({
+      tenantIdentifier: 'X-TENANT-ID',
+      options: () => {},
+      skipTenantCheck: (req) => req.route.path.match(/^\/birds*/) != null,
+      uri: (tenantId: string) =>
+        `mongodb://127.0.0.1:27017/test-tenant-${tenantId}`,
+    }),
+    CatsModule,
+    DogsModule,
+    BirdsModule,
+  ],
 })
-export class AppModule { }
+export class AppModule {}

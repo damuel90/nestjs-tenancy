@@ -29,6 +29,11 @@ export interface TenancyModuleOptions extends Record<string, any> {
   validator?: (tenantId: string) => TenancyValidator;
 
   /**
+   * Use for bypassing tenant database connection on some routes.
+   */
+  skipTenantCheck?: (request: Request) => boolean;
+
+  /**
    * Options for the database
    */
   options?: any;
