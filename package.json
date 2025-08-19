@@ -1,5 +1,5 @@
 {
-        "name": "@damuel90/nestjs-multitenancy",
+        "name": "@damuel90/nestjs-muntitenancy",
         "version": "3.0.3",
         "description": "Nestjs module for multitenancy support with mongoose",
         "author": "Damuel Querales <damuel90@gmail.com>",
@@ -9,8 +9,6 @@
         },
         "license": "MIT",
         "private": false,
-        "main": "dist/index.js",
-        "types": "dist/index.d.ts",
         "scripts": {
                 "lint": "eslint \"lib/**/*.ts\" --fix",
                 "format": "prettier \"lib/**/*.ts\" --write",
