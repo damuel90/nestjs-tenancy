@@ -1,6 +1,6 @@
 {
         "name": "@damuel90/nestjs-muntitenancy",
-        "version": "3.0.3",
+        "version": "3.0.4",
         "description": "Nestjs module for multitenancy support with mongoose",
         "author": "Damuel Querales <damuel90@gmail.com>",
         "repository": {
