@@ -3,7 +3,10 @@
         "version": "3.0.3",
         "description": "Nestjs module for multitenancy support with mongoose",
         "author": "Damuel Querales <damuel90@gmail.com>",
-        "repository": "https://github.com/damuel90/nestjs-tenancy",
+        "repository": {
+                "type": "git",
+                "url": "git+https://github.com/damuel90/nestjs-tenancy.git"
+        },
         "license": "MIT",
         "private": false,
         "main": "dist/index.js",
